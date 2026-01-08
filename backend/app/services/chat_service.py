@@ -3,7 +3,12 @@ from app.llm.client import llm
 from app.memory.memory_store import get_history, save_history
 from dotenv import load_dotenv
 from langfuse import observe
-from app.core.observability import score_trace, score_span
+from app.core.observability import score_trace
+from app.evals.basic import (
+    eval_persona_consistency,
+    eval_response_length,
+    eval_question_answering,
+)
 import os
 
 load_dotenv()
@@ -31,25 +36,39 @@ def chat_service(user_id: str, message: str) -> str:
     ] + history + [HumanMessage(content=message)]
 
     response = llm.invoke(messages)
+    response_text = response.content
+
+    # =========================
+    # EVALUATIONS (REAL)
+    # =========================
 
     score_trace(
-        name="overall_quality",
-        value=1.0,
-        comment="Response generated successfully",
+        name="persona_consistency",
+        value=eval_persona_consistency(response_text),
+        data_type="NUMERIC",
+        comment="Checks warmth & feminine tone alignment",
     )
 
-    score_span(
-        name="correctness",
-        value=0.9,
-        comment="Factually correct",
+    score_trace(
+        name="response_length_ok",
+        value=eval_response_length(response_text),
+        data_type="BOOLEAN",
+        comment="Response length within acceptable range",
+    )
+
+    score_trace(
+        name="answers_user",
+        value=eval_question_answering(message, response_text),
+        data_type="BOOLEAN",
+        comment="Does the response actually address the user input",
     )
 
     save_history(
         user_id,
         history + [
             HumanMessage(content=message),
-            AIMessage(content=response.content)
+            AIMessage(content=response_text)
         ]
     )
 
-    return response.content
+    return response_text
