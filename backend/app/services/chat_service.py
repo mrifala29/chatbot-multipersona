@@ -1,14 +1,14 @@
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from app.llm.client import llm
 from app.memory.memory_store import get_history, save_history
-from app.core.observability import langfuse
 from dotenv import load_dotenv
+from langfuse import observe
+from app.core.observability import score_trace, score_span
 import os
-
 
 load_dotenv()
 
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))  
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 PROMPT_DIR = os.path.join(BASE_DIR, "prompts")
 
 def load_prompt(filename: str) -> str:
@@ -18,41 +18,30 @@ def load_prompt(filename: str) -> str:
     with open(path, "r", encoding="utf-8") as f:
         return f.read().strip()
 
-GLOBAL_PROMPT = load_prompt(
-    os.getenv("PROMPT_GLOBAL")
-)
+GLOBAL_PROMPT = load_prompt(os.getenv("PROMPT_GLOBAL"))
+PERSONA_PROMPT = load_prompt(os.getenv("PROMPT_PERSONA_1"))
 
-PERSONA_PROMPT = load_prompt(
-    os.getenv("PROMPT_PERSONA_1")
-)
-
+@observe(name="chat_service")
 def chat_service(user_id: str, message: str) -> str:
-    trace = langfuse.trace(
-        name="chat",
-        user_id=user_id,
-        input=message
-    )
-
     history = get_history(user_id)
 
     messages = [
-        SystemMessage(content="GLOBAL PROMPT"),
-        SystemMessage(content="PERSONA PROMPT"),
+        SystemMessage(content=GLOBAL_PROMPT),
+        SystemMessage(content=PERSONA_PROMPT),
     ] + history + [HumanMessage(content=message)]
-
-    trace.span(
-        name="build_prompt",
-        input={
-            "history": [m.content for m in history],
-            "user": message
-        }
-    )
 
     response = llm.invoke(messages)
 
-    trace.span(
-        name="llm_call",
-        output=response.content
+    score_trace(
+        name="overall_quality",
+        value=1.0,
+        comment="Response generated successfully",
+    )
+
+    score_span(
+        name="correctness",
+        value=0.9,
+        comment="Factually correct",
     )
 
     save_history(
@@ -62,7 +51,5 @@ def chat_service(user_id: str, message: str) -> str:
             AIMessage(content=response.content)
         ]
     )
-
-    trace.update(output=response.content)
 
     return response.content

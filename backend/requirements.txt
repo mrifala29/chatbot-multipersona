@@ -3,5 +3,5 @@ uvicorn
 langchain
 langchain-community
 langchain-openai
-langfuse
+langfuse>=2.0.0
 python-dotenv
