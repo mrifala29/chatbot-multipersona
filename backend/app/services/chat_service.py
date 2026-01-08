@@ -1,6 +1,6 @@
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from app.llm.client import llm
-from app.memory.redis_store import get_history, save_history
+from app.memory.memory_store import get_history, save_history
 from app.core.observability import langfuse
 from dotenv import load_dotenv
 import os

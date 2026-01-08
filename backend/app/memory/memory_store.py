@@ -1,7 +1,6 @@
-from typing import Dict, List
-from langchain_core.messages import BaseMessage
+from langchain_core.messages import HumanMessage, AIMessage
 
-memory_store: Dict[str, List[BaseMessage]] = {}
+memory_store: dict[str, list] = {}
 MAX_MESSAGES = 6
 
 def get_history(user_id: str):
