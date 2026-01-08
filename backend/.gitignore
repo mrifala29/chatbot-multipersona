@@ -1,22 +1,29 @@
-# ===== Python =====
+# =====================
+# Environment & Secrets
+# =====================
+.env
+
+# =====================
+# Python
+# =====================
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
 .venv/
 venv/
 
-# ===== Environment & Secrets =====
-.env
-.env.*
-*.key
+# =====================
+# Docker
+# =====================
+docker-compose.override.yml
 
-# ===== Prompt Engineering (PRIVATE) =====
-app/prompts/*.txt
-
-# ===== OS =====
+# =====================
+# OS / Editor
+# =====================
 .DS_Store
-Thumbs.db
+.vscode/
+.idea/
 
-# ===== Docker =====
-*.log
+# =====================
+# Project specific
+# =====================
+app/prompts/
